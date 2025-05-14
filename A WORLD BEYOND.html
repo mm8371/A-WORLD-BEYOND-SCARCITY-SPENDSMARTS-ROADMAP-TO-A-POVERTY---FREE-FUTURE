@@ -1,0 +1,145 @@
+<h1>Enhanced Finance Tracker</h1> 
+<div id="auth"> 
+  <div id="registerForm"> 
+	<h2>Register</h2> 
+	<input type="email" id="regEmail" placeholder="Email"> 
+	<input type="password" id="regPassword" placeholder="Password"> 
+	<button onclick="register()">Register</button> 
+  </div> 
+  <div id="loginForm"> 
+	<h2>Login</h2> 
+	<input type="email" id="loginEmail" placeholder="Email"> 
+	<input type="password" id="loginPassword" placeholder="Password"> 
+	<button onclick="login()">Login</button> 
+  </div> 
+</div> 
+<div id="app" class="hidden"> 
+<h2>Welcome, <span id="userEmail"></span>!</h2> 
+<button onclick="logout()">Logout</button> 
+<h3>Balance: $<span id="balance" class="balance">0</span></h3> 
+<h3>Add Transaction</h3> 
+<input type="number" id="amount" placeholder="Amount (+ for income, - for expense)"> 
+<input type="text" id="description" placeholder="Description"> 
+<input type="date" id="date"> 
+<button onclick="addTransaction()">Save</button> 
+<h2>Login</h2> 
+<input type="email" id="loginEmail" placeholder="Email"> 
+<input type="password" id="loginPassword" placeholder="Password"> 
+<button onclick="login()">Login</button> 
+</div> 
+</div> 
+<div id="app" class="hidden"> 
+<h2>Welcome, <span id="userEmail"></span>!</h2> 
+<button onclick="logout()">Logout</button> 
+<h3>Balance: $<span id="balance" class="balance">0</span></h3> 
+<h3>Add Transaction</h3> 
+<input type="number" id="amount" placeholder="Amount (+ for income, - for expense)"> 
+<input type="text" id="description" placeholder="Description"> 
+<input type="date" id="date"> 
+<button onclick="addTransaction()">Save</button> 
+<div id="transactions"> 
+<h3>Transactions</h3> 
+<input type="text" id="search" placeholder="Search transactions" 
+oninput="searchTransactions()"> 
+<ul id="transactionList"></ul> 
+</div> 
+<button id="darkModeToggle" onclick="toggleDarkMode()">Toggle Dark Mode</button> 
+<button onclick="exportTransactions()">Export Transactions</button> 
+</div> 
+<script> 
+let users = JSON.parse(localStorage.getItem('users') || '{}'); 
+let currentUser = localStorage.getItem('currentUser'); 
+let darkMode = JSON.parse(localStorage.getItem('darkMode')) || false; 
+const authDiv = document.getElementById('auth'); 
+const appDiv = document.getElementById('app'); 
+const balanceSpan = document.getElementById('balance'); 
+const transactionList = document.getElementById('transactionList'); 
+const searchInput = document.getElementById('search'); 
+if (currentUser) { 
+showApp(); 
+} 
+function register() { 
+const email = document.getElementById('regEmail').value; 
+const password = document.getElementById('regPassword').value; 
+if (!email || !password) return alert("Fill out all fields."); 
+if (users[email]) { 
+alert("User already exists."); 
+} else { 
+users[email] = { password, transactions: [] }; 
+localStorage.setItem('users', JSON.stringify(users)); 
+alert("Registration successful!"); 
+} 
+} 
+function login() { 
+const email = document.getElementById('loginEmail').value; 
+const password = document.getElementById('loginPassword').value; 
+const user = users[email];  
+if (user && user.password === password) { 
+localStorage.setItem('currentUser', email); 
+currentUser = email; 
+showApp(); 
+} else { 
+alert("Invalid credentials."); 
+} 
+} 
+function logout() { 
+localStorage.removeItem('currentUser'); 
+currentUser = null; 
+location.reload(); 
+} 
+function showApp() { 
+authDiv.classList.add('hidden'); 
+appDiv.classList.remove('hidden'); 
+document.getElementById("userEmail").textContent = currentUser; 
+loadTransactions();} 
+function loadTransactions() { 
+const transactions = users[currentUser].transactions || []; 
+transactionList.innerHTML = ''; 
+let balance = 0; 
+transactions.forEach((t, index) => { 
+balance += parseFloat(t.amount); 
+const li = document.createElement('li'); 
+li.innerHTML = `${t.date} - ${t.description} - $${t.amount}  
+<button onclick="deleteTransaction(${index})">Delete</button>`; 
+transactionList.appendChild(li); 
+}) 
+balanceSpan.textContent = balance.toFixed(2); 
+balanceSpan.className = 'balance ' + (balance >= 0 ? 'positive' : 'negative'); } 
+function addTransaction() { 
+const amount = parseFloat(document.getElementById('amount').value); 
+const description = document.getElementById('description').value; 
+const date = document.getElementById('date').value; 
+if (!amount || !description || !date) return alert("All fields are required."); 
+users[currentUser].transactions.push({ amount, description, date }); 
+localStorage.setItem('users', JSON.stringify(users)); 
+document.getElementById('amount').value = ''; 
+document.getElementById('description').value = ''; 
+document.getElementById('date').value = ''; 
+loadTransactions();} 
+function deleteTransaction(index) { 
+users[currentUser].transactions.splice(index, 1); 
+localStorage.setItem('users', JSON.stringify(users)); 
+loadTransactions();} 
+function searchTransactions() { 
+const keyword = searchInput.value.toLowerCase(); 
+const transactions = users[currentUser].transactions || []; 
+const filtered = transactions.filter(t => 
+t.description.toLowerCase().includes(keyword) 
+); 
+transactionList.innerHTML = ''; 
+filtered.forEach((t, index) => { 
+const li = document.createElement('li'); 
+li.innerHTML = `${t.date} - ${t.description} - $${t.amount} 
+<button onclick="deleteTransaction(${index})">Delete</button>`; 
+transactionList.appendChild(li); 
+function toggleDarkMode() { 
+  darkMode = !darkMode; 
+  localStorage.setItem('darkMode', darkMode); 
+  if (darkMode) { 
+	document.body.classList.add('dark-mode'); 
+	document.body.classList.remove('light-mode'); 
+  } else { 
+	document.body.classList.add('light-mode'); 
+	document.body.classList.remove('dark-mode'); 
+  } 
+} 
